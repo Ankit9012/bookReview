@@ -62,4 +62,30 @@ class Book extends Model
             $query->whereBetween('created_at', [$from, $to]);
         }
     }
+
+    public function scopeMinReviews(Builder $query,int $minReviews):Builder{
+        return $query->having('reviews_count','>=',$minReviews);
+    }
+
+    public function scopePopularLastMonth(Builder $query): Builder
+    {
+        return $query->popular(now()->subMonth(), now())->highestRated(now()->subMonth(), now())->minReviews(1);
+    }
+
+    public function scopePopularLast6Months(Builder $query): Builder
+    {
+        return $query->popular(now()->subMonths(6))->highestRated(now()->subMonths(5))
+            ->minReviews(5);
+    }
+
+    public function scopeHighestRatedLastMonth(Builder $query): Builder
+    {
+        return $query->highestRated(now()->subMonth(), now())->popular(now()->subMonth(2), now())
+            ->minReviews(10);
+    }
+
+    public function scopeHighestRatedLast6Months(Builder $query): Builder
+    {
+        return $query->highestRated(now()->subMonths(6), now())->popular(now()->subMonths(6), now())->minReviews(5);
+    }
 }

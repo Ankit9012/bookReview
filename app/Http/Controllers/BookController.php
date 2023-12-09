@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class BookController extends Controller
@@ -13,11 +14,25 @@ class BookController extends Controller
     public function index(Request $request)
     {
         $title = $request->input('title');
+        $filter = $request->input('filter', '');
 
         $books = Book::when(
             $title,
             fn ($query, $title) => $query->title($title)
-        )->get();
+        );
+
+        /** match is working same as the switch case but it need to return something, so default case is required */
+
+        $books = match ($filter) {
+            'popular_last_month' => $books->popularLastMonth(),
+            'poplular_last_6_month' => $books->popularLast6Months(),
+            'highest_rated_last_month' => $books->highestRatedLastMonth(),
+            'highest_rated_last_6_month' => $books->highestRatedLast6Months(),
+            default => $books->latest()
+        };
+
+
+        $books = $books->get();
 
         return view('books.index', [
             'books' => $books,
@@ -43,9 +58,17 @@ class BookController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Book $book)
     {
-        //
+
+        /**
+         * Create arrow funciton
+         */
+        return view('books.show', [
+            'book' => $book->load([
+                'reviews' => fn (Builder $query) => $query->latest()
+            ])
+        ]);
     }
 
     /**
